@@ -1,6 +1,7 @@
-from flask import Flask, render_template, request, jsonify,send_file
+from flask import Flask, render_template, request, send_file
 import csv
 import os
+import tempfile
 
 app = Flask(__name__)
 
@@ -25,14 +26,15 @@ def process_csv(file_path, writer):
                 writer.writerow([linkedin_url, first_name, last_name, gender, current_job_title, city, state, country, phone_numbers, email_addresses, company_size, industry])
 
 # Function to process all CSV files in a folder
-def process_folder(folder_path, output_file):
-    with open(output_file, 'w', newline='', encoding='utf-8') as output:
-        writer = csv.writer(output)
+def process_folder(folder_path):
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, newline='', encoding='utf-8') as temp_file:
+        writer = csv.writer(temp_file)
         writer.writerow(["LinkedinProfileURL", "FirstName", "LastName", "Gender", "Curent Job Title", "City", "State", "Country", "PhoneNumbers", "Emailaddresses", "CompanySize", "Industry"])
         for filename in os.listdir(folder_path):
             if filename.endswith('.csv'):
                 file_path = os.path.join(folder_path, filename)
                 process_csv(file_path, writer)
+        return temp_file.name
 
 @app.route('/')
 def index():
@@ -41,9 +43,7 @@ def index():
 @app.route('/generate_csv', methods=['POST'])
 def generate_csv():
     folder_path = request.form['folderPath']
-    output_file = os.path.join(os.path.dirname(__file__), request.form['fileName'] + '.csv')
-    process_folder(folder_path, output_file)
-    file_path = os.path.abspath(output_file)  # Get the absolute path of the generated file
+    output_file = process_folder(folder_path)
     return send_file(output_file, as_attachment=True)
 
 
