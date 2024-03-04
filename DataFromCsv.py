@@ -41,7 +41,7 @@ def index():
 @app.route('/generate_csv', methods=['POST'])
 def generate_csv():
     folder_path = request.form['folderPath']
-    output_file = request.form['fileName'] + '.csv'
+    output_file = os.path.join(os.path.dirname(__file__), request.form['fileName'] + '.csv')
     process_folder(folder_path, output_file)
     file_path = os.path.abspath(output_file)  # Get the absolute path of the generated file
     return send_file(output_file, as_attachment=True)
